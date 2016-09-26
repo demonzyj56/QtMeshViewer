@@ -8,6 +8,8 @@ QT       += core gui opengl
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
+CONFIG += console
+
 TARGET = MeshViewer
 TEMPLATE = app
 
@@ -18,10 +20,15 @@ SOURCES += main.cpp\
 
 HEADERS  += mainwindow.h \
     openglwindow.h \
-    common.h
+    common.h \
+    ../../ClionProjects/OpenglPlayground/TriMesh.h \
+    ../../ClionProjects/OpenglPlayground/MParser.h \
+    arcball.h
 
 FORMS    += mainwindow.ui
 
-INCLUDEPATH += ./3rdparty/glew-2.0.0/include/
+INCLUDEPATH += ./3rdparty/glew-2.0.0/include/ \
+        /home/leoyolo/ClionProjects/OpenglPlayground/ \
+        ./3rdparty/glm/
 
 LIBS += -L./3rdparty/glew-2.0.0/build/lib -lGLEW

@@ -5,6 +5,8 @@
 #include "openglwindow.h"
 
 class QMenu;
+class QAction;
+class QLabel;
 
 namespace Ui {
 class MainWindow;
@@ -21,6 +23,7 @@ public:
 private:
     void CreateActions();
     void CreateMenus();
+    void CreateStatusBar();
 
 private:
     Ui::MainWindow *ui;
@@ -30,6 +33,7 @@ private:
     QMenu *menu_file_;
     QAction *action_open_;
     QAction *action_exit_;
+    QLabel  *label_meshinfo_;
 };
 
 #endif // MAINWINDOW_H
