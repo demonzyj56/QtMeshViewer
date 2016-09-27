@@ -22,9 +22,9 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
     delete ui;
-    SafeDelete(menu_file_);
-    SafeDelete(action_open_);
-    SafeDelete(action_exit_);
+//    SafeDelete(menu_file_);
+//    SafeDelete(action_open_);
+//    SafeDelete(action_exit_);
 }
 
 void MainWindow::CreateActions() {

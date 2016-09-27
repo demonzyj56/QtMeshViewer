@@ -4,7 +4,7 @@
 #include "openglwindow.h"
 #include "TriMesh.h"
 #include "MParser.h"
-//#include "arcball.h"
+#include "arcball.h"
 #include <QFileDialog>
 #include <QString>
 #include <glm/glm.hpp>
@@ -17,7 +17,7 @@
 OpenGLWindow::OpenGLWindow(QWidget *parent)
     : QGLWidget(parent), m_mesh(nullptr), m_camera(),
       m_draw_axes(true), m_draw_points(true), m_draw_edges(true),
-      m_draw_faces(true), m_draw_texture(true)
+      m_draw_faces(true), m_draw_texture(true), m_arcball(this->width(), this->height())
 {
 }
 
@@ -47,6 +47,8 @@ void OpenGLWindow::initializeGL() {
 void OpenGLWindow::resizeGL(int w, int h) {
     glViewport(0, 0, w, h);
 
+    m_arcball.SetSize(w, h);
+
     // View
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -67,7 +69,7 @@ void OpenGLWindow::paintGL() {
     glLoadMatrixf(glm::value_ptr(m_camera.LookAt()));
 
     glPushMatrix();
-//    glMultMatrixf(glm::value_ptr(m_arcball.GetMatrix()));
+    glMultMatrixf(glm::value_ptr(m_arcball.GetMatrix()));
     Render();
     glPopMatrix();
 
@@ -77,8 +79,8 @@ void OpenGLWindow::paintGL() {
 void OpenGLWindow::mousePressEvent(QMouseEvent *e) {
     switch (e->button()) {
     case Qt::LeftButton:
-        printf("Left button is pressed.\n");
-//        m_arcball.MouseDown(e->pos());
+//        printf("Left button is pressed.\n");
+        m_arcball.MouseDown(e->pos().x(), e->pos().y());
         break;
     case Qt::MidButton:
 //        printf("Mouse MidButton is pressed. Current position: %d %d\n", e->pos().x(), e->pos().y());
@@ -95,6 +97,7 @@ void OpenGLWindow::mouseMoveEvent(QMouseEvent *e) {
     // Note that the returned value is always Qt::NoButton for mouse move events.
     switch (e->buttons()) { // This should be BUTTONS!
     case Qt::LeftButton:
+        m_arcball.MouseMove(e->pos().x(), e->pos().y());
         break;
     case Qt::MidButton:
 //        printf("Mouse MidButton is moved. Current position: %d %d\n", e->pos().x(), e->pos().y());
@@ -112,7 +115,7 @@ void OpenGLWindow::mouseMoveEvent(QMouseEvent *e) {
 void OpenGLWindow::mouseReleaseEvent(QMouseEvent *e) {
     switch (e->button()) {
     case Qt::LeftButton:
-//        m_arcball.MouseUp(e->pos());
+        m_arcball.MouseUp(e->pos().x(), e->pos().y());
         break;
     case Qt::MidButton:
         break;

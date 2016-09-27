@@ -4,6 +4,7 @@
 #include <memory>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include "arcball.h"
 
 class TriMesh;
 class QString;
@@ -71,7 +72,7 @@ signals:
 private:
     std::shared_ptr<TriMesh> m_mesh;
     Camera m_camera;
-//    ArcBall m_arcball;
+    ArcBall m_arcball;
     bool m_draw_axes;
     bool m_draw_points;
     bool m_draw_edges;
