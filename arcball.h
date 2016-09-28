@@ -10,7 +10,7 @@
 class ArcBall {
 public:
     ArcBall(int width, int height)
-        : m_mouse_down(false) {
+        : m_mouse_down(false), m_transform{} {
         this->SetSize(width, height);
     }
 
@@ -19,31 +19,41 @@ public:
         m_height = static_cast<float>(height);
     }
 
+    void Reset() {
+        m_transform = glm::quat{};
+    }
+
     void MouseDown(int px, int py) {
-        glm::vec2 screen_coord = this->ConvertToScreen(px, py);
-        printf("ArcBall.MouseDown: Screen Coordinate: %.3f, %.3f\n", screen_coord.x, screen_coord.y);
+//        glm::vec2 screen_coord = this->ConvertToScreen(px, py);
+//        printf("ArcBall.MouseDown: Screen Coordinate: %.3f, %.3f\n", screen_coord.x, screen_coord.y);
         m_mouse_down = true;
-        m_last_pos = this->MouseOnSphere(this->ConvertToScreen(px, py), glm::vec2(0.0f), 1.0f);
-        m_cur_pos = m_last_pos;
+        m_cur_pos = this->MouseOnSphere(this->ConvertToScreen(px, py), glm::vec2(0.0f), 1.0f);
+        m_last_pos = m_cur_pos;
+        this->UpdateQuat();
     }
 
     void MouseMove(int px, int py) {
-        glm::vec2 screen_coord = this->ConvertToScreen(px, py);
-        printf("ArcBall.MouseMove: Screen Coordinate: %.3f, %.3f\n", screen_coord.x, screen_coord.y);
+//        glm::vec2 screen_coord = this->ConvertToScreen(px, py);
+//        printf("ArcBall.MouseMove: Screen Coordinate: %.3f, %.3f\n", screen_coord.x, screen_coord.y);
         if (!m_mouse_down)
             return;
+        m_last_pos = m_cur_pos;
         m_cur_pos = this->MouseOnSphere(this->ConvertToScreen(px, py), glm::vec2(0.0f), 1.0f);
+        this->UpdateQuat();
     }
 
     void MouseUp(int px, int py) {
-        glm::vec2 screen_coord = this->ConvertToScreen(px, py);
-        printf("ArcBall.MouseUp: Screen Coordinate: %.3f, %.3f\n", screen_coord.x, screen_coord.y);
-        m_mouse_down = false;
+//        glm::vec2 screen_coord = this->ConvertToScreen(px, py);
+//        printf("ArcBall.MouseUp: Screen Coordinate: %.3f, %.3f\n", screen_coord.x, screen_coord.y);
+        m_last_pos = m_cur_pos;
         m_cur_pos = this->MouseOnSphere(this->ConvertToScreen(px, py), glm::vec2(0.0f), 1.0f);
+        this->UpdateQuat();
+        m_mouse_down = false;
     }
 
     glm::mat4 GetMatrix() {
-        return glm::mat4_cast(this->GetQuat(m_last_pos, m_cur_pos));
+//        return glm::mat4_cast(this->GetQuat(m_last_pos, m_cur_pos));
+        return glm::mat4_cast(m_transform);
     }
 
 private:
@@ -70,14 +80,20 @@ private:
         return glm::rotation(from, to);
     }
 
+    glm::quat &UpdateQuat() {
+//        m_transform *= GetQuat(m_last_pos, m_cur_pos);
+        m_transform = GetQuat(m_last_pos, m_cur_pos) * m_transform;
+        return m_transform;
+    }
+
     glm::vec2 ConvertToScreen(int x, int y) {
         glm::vec2 screen;
         if (m_width >= m_height) {
-            screen.x = (2.f*float(x)/m_width-1.f) * (m_width/m_height);
+            screen.x = (2.f*float(x)/m_width-1.f);// * (m_width/m_height);
             screen.y = -(2.f*float(y)/m_height-1.f);
         } else {
             screen.x = (2.f*float(x)/m_width-1.f);
-            screen.y = -(2.f*float(y)/m_height-1.f) * (m_height/m_width);
+            screen.y = -(2.f*float(y)/m_height-1.f);// * (m_height/m_width);
         }
         return screen;
     }
@@ -91,6 +107,7 @@ private:
     glm::vec3 m_cur_pos;
 //    int m_last_pos[2];
 //    int m_cur_pos[2];
+    glm::quat m_transform;
 
 };
 

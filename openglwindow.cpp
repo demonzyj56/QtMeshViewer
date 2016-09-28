@@ -175,21 +175,21 @@ void OpenGLWindow::DrawAxes(bool bv) {
         glColor3f(1.0f, 0.0f, 0.0f);
         glBegin(GL_LINES);
         glVertex3f(0.0f, 0.0f, 0.0f);
-        glVertex3f(0.7f, 0.0f, 0.0f);
+        glVertex3f(4.7f, 0.0f, 0.0f);
         glEnd();
 
         // y-axis
         glColor3f(0.0f, 1.0f, 0.0f);
         glBegin(GL_LINES);
         glVertex3f(0.0f, 0.0f, 0.0f);
-        glVertex3f(0.0f, 0.7f, 0.0f);
+        glVertex3f(0.0f, 4.7f, 0.0f);
         glEnd();
 
         // z-axis
         glColor3f(0.0f, 0.0f, 1.0f);
         glBegin(GL_LINES);
         glVertex3f(0.0f, 0.0f, 0.0f);
-        glVertex3f(0.0f, 0.0f, 0.7f);
+        glVertex3f(0.0f, 0.0f, 4.7f);
         glEnd();
 
         glColor3f(1.0f, 1.0f, 1.0f);
