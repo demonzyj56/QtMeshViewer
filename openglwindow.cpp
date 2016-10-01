@@ -17,7 +17,9 @@
 OpenGLWindow::OpenGLWindow(QWidget *parent)
     : QGLWidget(parent), m_mesh(nullptr), m_camera(),
       m_draw_axes(true), m_draw_points(true), m_draw_edges(true),
-      m_draw_faces(true), m_draw_texture(true), m_arcball(this->width(), this->height())
+      m_draw_faces(true), m_draw_texture(true), m_arcball(this->width(), this->height()),
+      m_draw_bounding_box(false),
+      m_bounding_box{0.f, 0.f, 0.f, 0.f, 0.f, 0.f}
 {
 }
 
@@ -152,11 +154,12 @@ void OpenGLWindow::ReadMesh() {
         return;
     }
     emit(operatorInfo(QString("Read Mesh from")+filename));
+    this->ComputeBoundingBox();
     printf("------ Mesh Info ------\n");
     printf("Mesh name: %s\n", filename.toStdString().c_str());
-    printf("Num of vertices: %d\n", m_mesh->NumVertices());
-    printf("Num of edges: %d\n", m_mesh->NumEdges());
-    printf("Num of faces: %d\n", m_mesh->NumFaces());
+    printf("Num of vertices: %d\n", (int)m_mesh->NumVertices());
+    printf("Num of edges: %d\n", (int)m_mesh->NumEdges());
+    printf("Num of faces: %d\n", (int)m_mesh->NumFaces());
     printf("-----------------------\n");
     updateGL();
 }
@@ -166,6 +169,7 @@ void OpenGLWindow::Render() {
     DrawPoints(m_draw_points);
     DrawEdges(m_draw_edges);
     DrawFaces(m_draw_faces);
+    DrawBoundingBox(m_draw_bounding_box);
 //    DrawTexture(m_draw_texture);
 }
 
@@ -192,6 +196,17 @@ void OpenGLWindow::DrawAxes(bool bv) {
         glVertex3f(0.0f, 0.0f, 4.7f);
         glEnd();
 
+        // ground
+        glColor3f(0.8f, 0.8f, 0.8f);
+        glBegin(GL_LINES);
+        for (int i = 0; i <= 20; ++i) {
+            glVertex3f(-2.f+0.2f*i, 0.f, -2.f);
+            glVertex3f(-2.f+0.2*i, 0.f, 2.0f);
+            glVertex3f(-2.f, 0.f, -2.f+0.2f*i);
+            glVertex3f(2.f, 0.f, -2.f+0.2f*i);
+        }
+        glEnd();
+
         glColor3f(1.0f, 1.0f, 1.0f);
     }
 }
@@ -204,7 +219,6 @@ void OpenGLWindow::DrawPoints(bool bv) {
     if (bv && m_mesh) {
         glBegin(GL_POINTS);
         for (auto vit = m_mesh->GetVerticesBegin(); vit != m_mesh->GetVerticesEnd(); ++vit) {
-//            glNormal3f((*vit)->nx, (*vit)->ny, (*vit)->nz);
             glVertex3f((*vit)->x, (*vit)->y, (*vit)->z);
         }
         glEnd();
@@ -215,11 +229,14 @@ void OpenGLWindow::DrawEdges(bool bv) {
     if (bv && m_mesh) {
         // We iterate over all faces and draw edges by GL_LINE_LOOP
         for (auto fit = m_mesh->GetFacesBegin(); fit != m_mesh->GetFacesEnd(); ++fit) {
+            HE_edge *e = (*fit)->edge;
+            HE_vert *v1 = e->vert;
+            HE_vert *v2 = e->next->vert;
+            HE_vert *v3 = e->prev->vert;
             glBegin(GL_LINE_LOOP);
-            for (auto &fv : m_mesh->GetFaceVertices(*fit)) {
-//                glNormal3f(fv->nx, fv->ny, fv->nz);
-                glVertex3f(fv->x, fv->y, fv->z);
-            }
+            glVertex3f(v1->x, v1->y, v1->z);
+            glVertex3f(v2->x, v2->y, v2->z);
+            glVertex3f(v3->x, v3->y, v3->z);
             glEnd();
         }
     }
@@ -229,11 +246,80 @@ void OpenGLWindow::DrawFaces(bool bv) {
     if (bv && m_mesh) {
         glBegin(GL_TRIANGLES);
         for (auto fit = m_mesh->GetFacesBegin(); fit != m_mesh->GetFacesEnd(); ++fit) {
-            for (auto &fv : m_mesh->GetFaceVertices(*fit)) {
+            HE_edge *e = (*fit)->edge;
+            HE_vert *v1 = e->vert;
+            HE_vert *v2 = e->next->vert;
+            HE_vert *v3 = e->prev->vert;
+            glVertex3f(v1->x, v1->y, v1->z);
+            glVertex3f(v2->x, v2->y, v2->z);
+            glVertex3f(v3->x, v3->y, v3->z);
 //                glNormal3f(fv->nx, fv->ny, fv->nz);
-                glVertex3f(fv->x, fv->y, fv->z);
-            }
         }
         glEnd();
+    }
+}
+
+void OpenGLWindow::DrawBoundingBox(bool bv) {
+    if (bv && m_mesh) {
+        glColor3f(1.0f, 1.0f, 1.0f);
+        glBegin(GL_LINES);
+        // zmin->zmax
+        glVertex3f(m_bounding_box.xmin, m_bounding_box.ymin, m_bounding_box.zmin);
+        glVertex3f(m_bounding_box.xmin, m_bounding_box.ymin, m_bounding_box.zmax);
+
+        glVertex3f(m_bounding_box.xmax, m_bounding_box.ymin, m_bounding_box.zmin);
+        glVertex3f(m_bounding_box.xmax, m_bounding_box.ymin, m_bounding_box.zmax);
+
+        glVertex3f(m_bounding_box.xmin, m_bounding_box.ymax, m_bounding_box.zmin);
+        glVertex3f(m_bounding_box.xmin, m_bounding_box.ymax, m_bounding_box.zmax);
+
+        glVertex3f(m_bounding_box.xmax, m_bounding_box.ymax, m_bounding_box.zmin);
+        glVertex3f(m_bounding_box.xmax, m_bounding_box.ymax, m_bounding_box.zmax);
+
+        // ymin->ymax
+        glVertex3f(m_bounding_box.xmin, m_bounding_box.ymin, m_bounding_box.zmin);
+        glVertex3f(m_bounding_box.xmin, m_bounding_box.ymax, m_bounding_box.zmin);
+
+        glVertex3f(m_bounding_box.xmax, m_bounding_box.ymin, m_bounding_box.zmin);
+        glVertex3f(m_bounding_box.xmax, m_bounding_box.ymax, m_bounding_box.zmin);
+
+        glVertex3f(m_bounding_box.xmin, m_bounding_box.ymin, m_bounding_box.zmax);
+        glVertex3f(m_bounding_box.xmin, m_bounding_box.ymax, m_bounding_box.zmax);
+
+        glVertex3f(m_bounding_box.xmax, m_bounding_box.ymin, m_bounding_box.zmax);
+        glVertex3f(m_bounding_box.xmax, m_bounding_box.ymax, m_bounding_box.zmax);
+
+        // xmin->xmax
+        glVertex3f(m_bounding_box.xmin, m_bounding_box.ymin, m_bounding_box.zmin);
+        glVertex3f(m_bounding_box.xmax, m_bounding_box.ymin, m_bounding_box.zmin);
+
+        glVertex3f(m_bounding_box.xmin, m_bounding_box.ymax, m_bounding_box.zmin);
+        glVertex3f(m_bounding_box.xmax, m_bounding_box.ymax, m_bounding_box.zmin);
+
+        glVertex3f(m_bounding_box.xmin, m_bounding_box.ymin, m_bounding_box.zmax);
+        glVertex3f(m_bounding_box.xmax, m_bounding_box.ymin, m_bounding_box.zmax);
+
+        glVertex3f(m_bounding_box.xmin, m_bounding_box.ymax, m_bounding_box.zmax);
+        glVertex3f(m_bounding_box.xmax, m_bounding_box.ymax, m_bounding_box.zmax);
+
+        glEnd();
+    }
+}
+
+void OpenGLWindow::ComputeBoundingBox() {
+    if (!m_mesh) return;
+    for (auto vit = m_mesh->GetVerticesBegin(); vit != m_mesh->GetVerticesEnd(); ++vit) {
+        if ((*vit)->x > m_bounding_box.xmax)
+            m_bounding_box.xmax = (*vit)->x;
+        if ((*vit)->x < m_bounding_box.xmin)
+            m_bounding_box.xmin = (*vit)->x;
+        if ((*vit)->y > m_bounding_box.ymax)
+            m_bounding_box.ymax = (*vit)->y;
+        if ((*vit)->y < m_bounding_box.ymin)
+            m_bounding_box.ymin = (*vit)->y;
+        if ((*vit)->z > m_bounding_box.zmax)
+            m_bounding_box.zmax = (*vit)->z;
+        if ((*vit)->z < m_bounding_box.zmin)
+            m_bounding_box.zmin = (*vit)->z;
     }
 }

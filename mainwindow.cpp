@@ -4,6 +4,10 @@
 #include <QMenu>
 #include <QAction>
 #include <QLabel>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QGroupBox>
+#include <QCheckBox>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -15,8 +19,16 @@ MainWindow::MainWindow(QWidget *parent) :
     CreateActions();
     CreateMenus();
     CreateStatusBar();
+    CreateOptionGroup();
 
-    setCentralWidget(openglwindow_);
+    QVBoxLayout *layout_options_ = new QVBoxLayout;
+    layout_options_->addWidget(groupbox_options_);
+    layout_options_->addStretch();
+    QHBoxLayout *layout_main_ = new QHBoxLayout;
+    layout_main_->addWidget(openglwindow_, 1);
+    layout_main_->addLayout(layout_options_);
+    this->centralWidget()->setLayout(layout_main_);
+
 }
 
 MainWindow::~MainWindow()
@@ -47,4 +59,30 @@ void MainWindow::CreateStatusBar() {
     label_meshinfo_ = new QLabel();
     statusBar()->addWidget(label_meshinfo_);
     connect(openglwindow_, SIGNAL(operatorInfo(QString)), label_meshinfo_, SLOT(setText(QString)));
+}
+
+void MainWindow::CreateOptionGroup() {
+    check_point_ = new QCheckBox(tr("Point"), this);
+    connect(check_point_, SIGNAL(clicked(bool)), openglwindow_, SLOT(SetDrawPoints(bool)));
+    check_point_->setChecked(true);
+    check_edge_ = new QCheckBox(tr("Edge"), this);
+    connect(check_edge_, SIGNAL(clicked(bool)), openglwindow_, SLOT(SetDrawEdges(bool)));
+    check_edge_->setChecked(true);
+    check_face_ = new QCheckBox(tr("Face"), this);
+    connect(check_face_, SIGNAL(clicked(bool)), openglwindow_, SLOT(SetDrawFaces(bool)));
+    check_face_->setChecked(true);
+    check_axes_ = new QCheckBox(tr("Axes"), this);
+    connect(check_axes_, SIGNAL(clicked(bool)), openglwindow_, SLOT(SetDrawAxes(bool)));
+    check_axes_->setChecked(true);
+    check_aabb_ = new QCheckBox(tr("AABB"), this);
+    connect(check_aabb_, SIGNAL(clicked(bool)), openglwindow_, SLOT(SetDrawBoundingBox(bool)));
+    check_aabb_->setChecked(false);
+
+    groupbox_options_ = new QGroupBox(tr("Options"), this);
+    QVBoxLayout *options_layout_ = new QVBoxLayout(groupbox_options_);
+    options_layout_->addWidget(check_point_);
+    options_layout_->addWidget(check_edge_);
+    options_layout_->addWidget(check_face_);
+    options_layout_->addWidget(check_axes_);
+    options_layout_->addWidget(check_aabb_);
 }

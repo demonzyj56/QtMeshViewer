@@ -55,20 +55,30 @@ protected:
 //    void keyReleaseEvent(QKeyEvent *e) override;
 
 private:
-    void Render();      // Main func doning the dirty job
+    void Render();      // Main func doing the dirty job
     void DrawAxes(bool);
     void DrawPoints(bool);
     void DrawEdges(bool);
     void DrawFaces(bool);
     void DrawTexture(bool);
+    void DrawBoundingBox(bool);
 
 public slots:
     void ReadMesh();
+    void SetDrawPoints(bool b) {m_draw_points = b; updateGL();}
+    void SetDrawEdges(bool b) {m_draw_edges = b; updateGL();}
+    void SetDrawFaces(bool b) {m_draw_faces = b; updateGL(); }
+    void SetDrawAxes(bool b) {m_draw_axes = b; updateGL();}
+    void SetDrawBoundingBox(bool b) {m_draw_bounding_box = b; updateGL();}
 
 
 signals:
     void operatorInfo(QString); // a simple signal hoding information.
                                 // probably for logging
+
+private: // helper func
+    void ComputeBoundingBox();
+
 private:
     std::shared_ptr<TriMesh> m_mesh;
     Camera m_camera;
@@ -78,6 +88,8 @@ private:
     bool m_draw_edges;
     bool m_draw_faces;
     bool m_draw_texture;
+    bool m_draw_bounding_box;
+    struct {float xmin, xmax, ymin, ymax, zmin, zmax;} m_bounding_box;
 };
 
 #endif // OPENGLWINDOW_H
