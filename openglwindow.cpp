@@ -18,7 +18,7 @@ OpenGLWindow::OpenGLWindow(QWidget *parent)
     : QGLWidget(parent), m_mesh(nullptr), m_camera(),
       m_draw_axes(true), m_draw_points(true), m_draw_edges(true),
       m_draw_faces(true), m_draw_texture(true), m_arcball(this->width(), this->height()),
-      m_draw_bounding_box(false),
+      m_draw_bounding_box(false), m_lighting(true),
       m_bounding_box{0.f, 0.f, 0.f, 0.f, 0.f, 0.f}
 {
 }
@@ -44,6 +44,8 @@ void OpenGLWindow::initializeGL() {
     glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
     glEnable(GL_DEPTH_TEST);
     glClearDepth(1);
+
+    SetLight();
 }
 
 void OpenGLWindow::resizeGL(int w, int h) {
@@ -65,6 +67,13 @@ void OpenGLWindow::resizeGL(int w, int h) {
 void OpenGLWindow::paintGL() {
     glShadeModel(GL_SMOOTH);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    if (m_lighting) {
+        SetLight();
+    } else {
+        glDisable(GL_LIGHTING);
+        glDisable(GL_LIGHT0);
+    }
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -173,6 +182,23 @@ void OpenGLWindow::Render() {
 //    DrawTexture(m_draw_texture);
 }
 
+void OpenGLWindow::SetLight() {
+    static GLfloat mat_specular[] = {1.0, 1.0, 1.0, 1.0};
+    static GLfloat mat_shininess[] = {50.0};
+    static GLfloat light_position[] = {0.0, 1.0, 0.0, 1.0};
+    static GLfloat white_light[] = {0.8, 0.8, 0.8, 1.0};
+    static GLfloat lmodel_ambient[] = {1.0, 1.0, 1.0, 1.0};
+
+    glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+    glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, white_light);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, white_light);
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+}
+
 void OpenGLWindow::DrawAxes(bool bv) {
     if (bv) {
         // x-axis
@@ -219,6 +245,7 @@ void OpenGLWindow::DrawPoints(bool bv) {
     if (bv && m_mesh) {
         glBegin(GL_POINTS);
         for (auto vit = m_mesh->GetVerticesBegin(); vit != m_mesh->GetVerticesEnd(); ++vit) {
+            glNormal3f((*vit)->nx, (*vit)->ny, (*vit)->nz);
             glVertex3f((*vit)->x, (*vit)->y, (*vit)->z);
         }
         glEnd();
@@ -234,8 +261,11 @@ void OpenGLWindow::DrawEdges(bool bv) {
             HE_vert *v2 = e->next->vert;
             HE_vert *v3 = e->prev->vert;
             glBegin(GL_LINE_LOOP);
+            glNormal3f(v1->nx, v1->ny, v1->nz);
             glVertex3f(v1->x, v1->y, v1->z);
+            glNormal3f(v2->nx, v2->ny, v2->nz);
             glVertex3f(v2->x, v2->y, v2->z);
+            glNormal3f(v3->nx, v3->ny, v3->nz);
             glVertex3f(v3->x, v3->y, v3->z);
             glEnd();
         }
@@ -250,10 +280,12 @@ void OpenGLWindow::DrawFaces(bool bv) {
             HE_vert *v1 = e->vert;
             HE_vert *v2 = e->next->vert;
             HE_vert *v3 = e->prev->vert;
+            glNormal3f(v1->nx, v1->ny, v1->nz);
             glVertex3f(v1->x, v1->y, v1->z);
+            glNormal3f(v2->nx, v2->ny, v2->nz);
             glVertex3f(v2->x, v2->y, v2->z);
+            glNormal3f(v3->nx, v3->ny, v3->nz);
             glVertex3f(v3->x, v3->y, v3->z);
-//                glNormal3f(fv->nx, fv->ny, fv->nz);
         }
         glEnd();
     }

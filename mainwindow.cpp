@@ -77,6 +77,9 @@ void MainWindow::CreateOptionGroup() {
     check_aabb_ = new QCheckBox(tr("AABB"), this);
     connect(check_aabb_, SIGNAL(clicked(bool)), openglwindow_, SLOT(SetDrawBoundingBox(bool)));
     check_aabb_->setChecked(false);
+    check_light_ = new QCheckBox(tr("Lighting"), this);
+    connect(check_light_, SIGNAL(clicked(bool)), openglwindow_, SLOT(SetDrawLighting(bool)));
+    check_light_->setChecked(true);
 
     groupbox_options_ = new QGroupBox(tr("Options"), this);
     QVBoxLayout *options_layout_ = new QVBoxLayout(groupbox_options_);
@@ -85,4 +88,5 @@ void MainWindow::CreateOptionGroup() {
     options_layout_->addWidget(check_face_);
     options_layout_->addWidget(check_axes_);
     options_layout_->addWidget(check_aabb_);
+    options_layout_->addWidget(check_light_);
 }

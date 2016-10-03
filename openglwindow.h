@@ -56,6 +56,7 @@ protected:
 
 private:
     void Render();      // Main func doing the dirty job
+    void SetLight();
     void DrawAxes(bool);
     void DrawPoints(bool);
     void DrawEdges(bool);
@@ -70,6 +71,7 @@ public slots:
     void SetDrawFaces(bool b) {m_draw_faces = b; updateGL(); }
     void SetDrawAxes(bool b) {m_draw_axes = b; updateGL();}
     void SetDrawBoundingBox(bool b) {m_draw_bounding_box = b; updateGL();}
+    void SetDrawLighting(bool b) {m_lighting = b; updateGL();}
 
 
 signals:
@@ -89,6 +91,7 @@ private:
     bool m_draw_faces;
     bool m_draw_texture;
     bool m_draw_bounding_box;
+    bool m_lighting;
     struct {float xmin, xmax, ymin, ymax, zmin, zmax;} m_bounding_box;
 };
 

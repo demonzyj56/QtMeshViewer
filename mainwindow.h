@@ -45,6 +45,7 @@ private:
     QCheckBox *check_face_;
     QCheckBox *check_axes_;
     QCheckBox *check_aabb_;
+    QCheckBox *check_light_;
 };
 
 #endif // MAINWINDOW_H
