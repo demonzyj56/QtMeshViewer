@@ -36,6 +36,9 @@ class OpenGLWindow : public QGLWidget
             current_position[0] = x;
             current_position[1] = y;
         }
+        glm::vec3 GetCurrentPosition() const {
+            return distance * init_position;
+        }
     };
 
 public:
