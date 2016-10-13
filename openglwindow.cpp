@@ -185,7 +185,7 @@ void OpenGLWindow::Render() {
 void OpenGLWindow::SetLight() {
     static GLfloat mat_specular[] = {1.0, 1.0, 1.0, 1.0};
     static GLfloat mat_shininess[] = {50.0};
-    static GLfloat light_position[] = {0.0, 1.0, 0.0, 1.0};
+    static GLfloat light_position[] = {1.0, 1.0, 1.0, 0.0};
     static GLfloat white_light[] = {0.8, 0.8, 0.8, 1.0};
     static GLfloat lmodel_ambient[] = {1.0, 1.0, 1.0, 1.0};
 

@@ -22,7 +22,7 @@ class OpenGLWindow : public QGLWidget
         glm::vec3 init_position; // This gives the initial position of the camera.
         int current_position[2];
 
-        Camera() : distance(3.f), goal(0.f), init_position{0.0f, 0.0f, 1.0f}, current_position{0, 0} {}
+        Camera() : distance(3.f), goal(0.f), init_position{1.0f, 1.0f, 1.0f}, current_position{0, 0} {}
         glm::mat4 LookAt() const {
             return glm::lookAt(distance * init_position,
                                goal,
