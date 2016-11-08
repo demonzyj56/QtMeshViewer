@@ -9,6 +9,7 @@ class QAction;
 class QLabel;
 class QGroupBox;
 class QCheckBox;
+class QComboBox;
 
 namespace Ui {
 class MainWindow;
@@ -46,6 +47,8 @@ private:
     QCheckBox *check_axes_;
     QCheckBox *check_aabb_;
     QCheckBox *check_light_;
+    QComboBox *combobox_projection_;
+    QComboBox *combobox_shade_;
 };
 
 #endif // MAINWINDOW_H

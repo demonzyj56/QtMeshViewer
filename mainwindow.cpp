@@ -8,6 +8,7 @@
 #include <QHBoxLayout>
 #include <QGroupBox>
 #include <QCheckBox>
+#include <QComboBox>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -80,6 +81,15 @@ void MainWindow::CreateOptionGroup() {
     check_light_ = new QCheckBox(tr("Lighting"), this);
     connect(check_light_, SIGNAL(clicked(bool)), openglwindow_, SLOT(SetDrawLighting(bool)));
     check_light_->setChecked(true);
+    combobox_projection_ = new QComboBox(this);
+    combobox_projection_->addItem("Perspective projection");
+    combobox_projection_->addItem("Orthogonal projection");
+    connect(combobox_projection_, SIGNAL(activated(int)), openglwindow_, SLOT(SetProjectionMode(int)));
+    combobox_shade_ = new QComboBox(this);
+    combobox_shade_->addItem("Smooth Shading");
+    combobox_shade_->addItem("Flat Shading");
+    connect(combobox_shade_, SIGNAL(activated(int)), openglwindow_, SLOT(SetShadeMode(int)));
+
 
     groupbox_options_ = new QGroupBox(tr("Options"), this);
     QVBoxLayout *options_layout_ = new QVBoxLayout(groupbox_options_);
@@ -89,4 +99,6 @@ void MainWindow::CreateOptionGroup() {
     options_layout_->addWidget(check_axes_);
     options_layout_->addWidget(check_aabb_);
     options_layout_->addWidget(check_light_);
+    options_layout_->addWidget(combobox_projection_);
+    options_layout_->addWidget(combobox_shade_);
 }
