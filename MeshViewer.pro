@@ -21,14 +21,13 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h \
     openglwindow.h \
     common.h \
-    ../../ClionProjects/OpenglPlayground/TriMesh.h \
-    ../../ClionProjects/OpenglPlayground/MParser.h \
+    TriMesh.h \
+    MParser.h \
     arcball.h
 
 FORMS    += mainwindow.ui
 
 INCLUDEPATH += ./3rdparty/glew-2.0.0/include/ \
-        /home/leoyolo/ClionProjects/OpenglPlayground/ \
         ./3rdparty/glm/
 
 LIBS += -L./3rdparty/glew-2.0.0/build/lib -lGLEW
