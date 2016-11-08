@@ -1,5 +1,6 @@
 #ifndef OPENGLWINDOW_H
 #define OPENGLWINDOW_H
+#include <GL/glew.h>
 #include <QGLWidget>
 #include <memory>
 #include <glm/glm.hpp>
@@ -29,8 +30,8 @@ class OpenGLWindow : public QGLWidget
                                glm::vec3(0.0f, 1.0f, 0.0f));
         }
         void CameraMove(int x, int y, int width, int height) {
-            goal[0] -= 2.*GLfloat(x - current_position[0]) / GLfloat(width);
-            goal[1] += 2.*GLfloat(y - current_position[1]) / GLfloat(height);
+            goal[0] -= 4.*GLfloat(x - current_position[0]) / GLfloat(width);
+            goal[1] += 4.*GLfloat(y - current_position[1]) / GLfloat(height);
         }
         void SetCurrentPosition(int x, int y) {
             current_position[0] = x;
@@ -44,6 +45,8 @@ class OpenGLWindow : public QGLWidget
 public:
     OpenGLWindow(QWidget *parent);
     ~OpenGLWindow();
+    enum ProjMode {Ortho, Persp};
+    enum ShadeMode {Flat, Smooth};
 
 protected:
     void initializeGL() override;
@@ -66,6 +69,8 @@ private:
     void DrawFaces(bool);
     void DrawTexture(bool);
     void DrawBoundingBox(bool);
+    void Project();
+    void Shade();
 
 public slots:
     void ReadMesh();
@@ -75,6 +80,8 @@ public slots:
     void SetDrawAxes(bool b) {m_draw_axes = b; updateGL();}
     void SetDrawBoundingBox(bool b) {m_draw_bounding_box = b; updateGL();}
     void SetDrawLighting(bool b) {m_lighting = b; updateGL();}
+    void SetProjectionMode(int p) {m_projection = (p==0?Persp:Ortho); updateGL();}
+    void SetShadeMode(int s) {m_shade = (s==0?Smooth:Flat); updateGL();}
 
 
 signals:
@@ -95,6 +102,8 @@ private:
     bool m_draw_texture;
     bool m_draw_bounding_box;
     bool m_lighting;
+    ProjMode m_projection;
+    ShadeMode m_shade;
     struct {float xmin, xmax, ymin, ymax, zmin, zmax;} m_bounding_box;
 };
 

@@ -19,7 +19,7 @@ OpenGLWindow::OpenGLWindow(QWidget *parent)
       m_draw_axes(true), m_draw_points(true), m_draw_edges(true),
       m_draw_faces(true), m_draw_texture(true), m_arcball(this->width(), this->height()),
       m_draw_bounding_box(false), m_lighting(true),
-      m_bounding_box{0.f, 0.f, 0.f, 0.f, 0.f, 0.f}
+      m_bounding_box{0.f, 0.f, 0.f, 0.f, 0.f, 0.f}, m_projection(Persp), m_shade(Smooth)
 {
 }
 
@@ -33,7 +33,8 @@ void OpenGLWindow::initializeGL() {
         exit(1);
     }
     glClearColor(0.3f, 0.3f, 0.3f, 0.0);
-    glShadeModel(GL_SMOOTH);
+//    glShadeModel(GL_SMOOTH);
+    Shade();
 
     glEnable(GL_DOUBLEBUFFER);
     glEnable(GL_POINT_SMOOTH);
@@ -53,19 +54,22 @@ void OpenGLWindow::resizeGL(int w, int h) {
 
     m_arcball.SetSize(w, h);
 
+    // Projection
+//    glm::mat4 Projection = glm::perspective(glm::radians(45.0f), GLfloat(w)/GLfloat(h), 0.01f, 100.0f);
+//    glMatrixMode(GL_PROJECTION);
+//    glLoadIdentity();
+//    glLoadMatrixf(glm::value_ptr(Projection));
+    Project();
+
     // View
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    // Projection
-    glm::mat4 Projection = glm::perspective(glm::radians(45.0f), GLfloat(w)/GLfloat(h), 0.01f, 100.0f);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glLoadMatrixf(glm::value_ptr(Projection));
 }
 
 void OpenGLWindow::paintGL() {
-    glShadeModel(GL_SMOOTH);
+//    glShadeModel(GL_SMOOTH);
+    Shade();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     if (m_lighting) {
@@ -74,6 +78,8 @@ void OpenGLWindow::paintGL() {
         glDisable(GL_LIGHTING);
         glDisable(GL_LIGHT0);
     }
+    // MVP, projection should come first.
+    Project();
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -168,8 +174,9 @@ void OpenGLWindow::ReadMesh() {
     printf("------ Mesh Info ------\n");
     printf("Mesh name: %s\n", filename.toStdString().c_str());
     printf("Num of vertices: %d\n", (int)m_mesh->NumVertices());
-    printf("Num of edges: %d\n", (int)m_mesh->NumEdges());
+    printf("Num of half edges: %d\n", (int)m_mesh->NumEdges());
     printf("Num of faces: %d\n", (int)m_mesh->NumFaces());
+    printf("Euler characteristic: %d\n", (int)m_mesh->NumVertices()-(int)m_mesh->NumEdges()/2+(int)m_mesh->NumFaces());
     printf("-----------------------\n");
     updateGL();
 }
@@ -202,6 +209,10 @@ void OpenGLWindow::SetLight() {
 
 void OpenGLWindow::DrawAxes(bool bv) {
     if (bv) {
+        if (m_lighting) {
+            glDisable(GL_LIGHTING);
+            glDisable(GL_LIGHT0);
+        }
         // x-axis
         glColor3f(1.0f, 0.0f, 0.0f);
         glBegin(GL_LINES);
@@ -235,6 +246,9 @@ void OpenGLWindow::DrawAxes(bool bv) {
         glEnd();
 
         glColor3f(1.0f, 1.0f, 1.0f);
+        if (m_lighting) {
+            SetLight();
+        }
     }
 }
 
@@ -338,6 +352,26 @@ void OpenGLWindow::DrawBoundingBox(bool bv) {
         glEnd();
     }
 }
+
+void OpenGLWindow::Project() {
+    if (m_projection == Ortho) {
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glOrtho(-1., 1., -1., 1., 0.001, 1000.);
+    } else {
+        glm::mat4 Projection = glm::perspective(glm::radians(45.0f),
+            GLfloat(this->width())/GLfloat(this->height()), 0.001f, 1000.0f);
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glLoadMatrixf(glm::value_ptr(Projection));
+    }
+}
+
+void OpenGLWindow::Shade() {
+    glShadeModel(m_shade==Smooth?GL_SMOOTH:GL_FLAT);
+}
+
+// helper func
 
 void OpenGLWindow::ComputeBoundingBox() {
     if (!m_mesh) return;
