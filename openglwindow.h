@@ -69,6 +69,7 @@ private:
     void DrawFaces(bool);
     void DrawTexture(bool);
     void DrawBoundingBox(bool);
+    void NormalizeSize(bool);
     void Project();
     void Shade();
 
@@ -80,8 +81,10 @@ public slots:
     void SetDrawAxes(bool b) {m_draw_axes = b; updateGL();}
     void SetDrawBoundingBox(bool b) {m_draw_bounding_box = b; updateGL();}
     void SetDrawLighting(bool b) {m_lighting = b; updateGL();}
+    void SetNormalized(bool b) {m_normalize_size = b; updateGL();}
     void SetProjectionMode(int p) {m_projection = (p==0?Persp:Ortho); updateGL();}
     void SetShadeMode(int s) {m_shade = (s==0?Smooth:Flat); updateGL();}
+    void SetRollSpeed(double s) {m_roll_speed = s; updateGL();}
 
 
 signals:
@@ -90,6 +93,7 @@ signals:
 
 private: // helper func
     void ComputeBoundingBox();
+    void PrintMeshInfo(const QString &filename);
 
 private:
     std::shared_ptr<TriMesh> m_mesh;
@@ -102,8 +106,10 @@ private:
     bool m_draw_texture;
     bool m_draw_bounding_box;
     bool m_lighting;
+    bool m_normalize_size;
     ProjMode m_projection;
     ShadeMode m_shade;
+    double m_roll_speed;
     struct {float xmin, xmax, ymin, ymax, zmin, zmax;} m_bounding_box;
 };
 

@@ -19,7 +19,8 @@ OpenGLWindow::OpenGLWindow(QWidget *parent)
       m_draw_axes(true), m_draw_points(true), m_draw_edges(true),
       m_draw_faces(true), m_draw_texture(true), m_arcball(this->width(), this->height()),
       m_draw_bounding_box(false), m_lighting(true),
-      m_bounding_box{0.f, 0.f, 0.f, 0.f, 0.f, 0.f}, m_projection(Persp), m_shade(Smooth)
+      m_bounding_box{0.f, 0.f, 0.f, 0.f, 0.f, 0.f}, m_projection(Persp), m_shade(Smooth),
+      m_roll_speed(0.001), m_normalize_size(false)
 {
 }
 
@@ -145,7 +146,7 @@ void OpenGLWindow::mouseReleaseEvent(QMouseEvent *e) {
 }
 
 void OpenGLWindow::wheelEvent(QWheelEvent *e) {
-    m_camera.distance += e->delta()*0.001;
+    m_camera.distance += e->delta()*m_roll_speed;
     m_camera.distance = m_camera.distance > 0 ? m_camera.distance : 0;
     updateGL();
 }
@@ -171,18 +172,13 @@ void OpenGLWindow::ReadMesh() {
     }
     emit(operatorInfo(QString("Read Mesh from")+filename));
     this->ComputeBoundingBox();
-    printf("------ Mesh Info ------\n");
-    printf("Mesh name: %s\n", filename.toStdString().c_str());
-    printf("Num of vertices: %d\n", (int)m_mesh->NumVertices());
-    printf("Num of half edges: %d\n", (int)m_mesh->NumEdges());
-    printf("Num of faces: %d\n", (int)m_mesh->NumFaces());
-    printf("Euler characteristic: %d\n", (int)m_mesh->NumVertices()-(int)m_mesh->NumEdges()/2+(int)m_mesh->NumFaces());
-    printf("-----------------------\n");
+    this->PrintMeshInfo(filename);
     updateGL();
 }
 
 void OpenGLWindow::Render() {
     DrawAxes(m_draw_axes);
+    NormalizeSize(m_normalize_size);
     DrawPoints(m_draw_points);
     DrawEdges(m_draw_edges);
     DrawFaces(m_draw_faces);
@@ -353,6 +349,21 @@ void OpenGLWindow::DrawBoundingBox(bool bv) {
     }
 }
 
+void OpenGLWindow::NormalizeSize(bool bv) {
+    if (bv && m_mesh) {
+        float ctr_x = (m_bounding_box.xmin + m_bounding_box.xmax)/2;
+        float ctr_y = (m_bounding_box.ymin + m_bounding_box.ymax)/2;
+        float ctr_z = (m_bounding_box.zmin + m_bounding_box.zmax)/2;
+        float x = m_bounding_box.xmax - m_bounding_box.xmin;
+        float y = m_bounding_box.ymax - m_bounding_box.ymin;
+        float z = m_bounding_box.zmax - m_bounding_box.zmin;
+        float scale = 1.f/MIN(x, MIN(y, z));
+        glTranslatef(scale*ctr_x, scale*ctr_y, scale*ctr_z);
+        glScalef(scale, scale, scale);
+        glTranslatef(-ctr_x, -ctr_y, -ctr_z);
+    }
+}
+
 void OpenGLWindow::Project() {
     if (m_projection == Ortho) {
         glMatrixMode(GL_PROJECTION);
@@ -389,4 +400,20 @@ void OpenGLWindow::ComputeBoundingBox() {
         if ((*vit)->z < m_bounding_box.zmin)
             m_bounding_box.zmin = (*vit)->z;
     }
+}
+
+void OpenGLWindow::PrintMeshInfo(const QString &filename = "") {
+    if (!m_mesh) return;
+    this->ComputeBoundingBox();
+    printf("------ Mesh Info ------\n");
+    if (!filename.isEmpty())
+        printf("Mesh name: %s\n", filename.toStdString().c_str());
+    printf("Num of vertices: %d\n", (int)m_mesh->NumVertices());
+    printf("Num of half edges: %d\n", (int)m_mesh->NumEdges());
+    printf("Num of faces: %d\n", (int)m_mesh->NumFaces());
+    printf("(xmin, xmax): (%.3f, %.3f)\n", m_bounding_box.xmin, m_bounding_box.xmax);
+    printf("(ymin, ymax): (%.3f, %.3f)\n", m_bounding_box.ymin, m_bounding_box.ymax);
+    printf("(zmin, zmax): (%.3f, %.3f)\n", m_bounding_box.zmin, m_bounding_box.zmax);
+    printf("Euler characteristic: %d\n", (int)m_mesh->NumVertices()-(int)m_mesh->NumEdges()/2+(int)m_mesh->NumFaces());
+    printf("-----------------------\n");
 }
