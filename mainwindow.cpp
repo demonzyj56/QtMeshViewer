@@ -9,6 +9,7 @@
 #include <QGroupBox>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDoubleSpinBox>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -24,6 +25,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QVBoxLayout *layout_options_ = new QVBoxLayout;
     layout_options_->addWidget(groupbox_options_);
+    layout_options_->addWidget(groupbox_others_);
     layout_options_->addStretch();
     QHBoxLayout *layout_main_ = new QHBoxLayout;
     layout_main_->addWidget(openglwindow_, 1);
@@ -81,14 +83,23 @@ void MainWindow::CreateOptionGroup() {
     check_light_ = new QCheckBox(tr("Lighting"), this);
     connect(check_light_, SIGNAL(clicked(bool)), openglwindow_, SLOT(SetDrawLighting(bool)));
     check_light_->setChecked(true);
+    check_normalize_ = new QCheckBox(tr("Normalize"), this);
+    connect(check_normalize_, SIGNAL(clicked(bool)), openglwindow_, SLOT(SetNormalized(bool)));
+    check_normalize_->setChecked(false);
     combobox_projection_ = new QComboBox(this);
-    combobox_projection_->addItem("Perspective projection");
-    combobox_projection_->addItem("Orthogonal projection");
+    combobox_projection_->addItem("Perspective Projection");
+    combobox_projection_->addItem("Orthogonal Projection");
     connect(combobox_projection_, SIGNAL(activated(int)), openglwindow_, SLOT(SetProjectionMode(int)));
     combobox_shade_ = new QComboBox(this);
     combobox_shade_->addItem("Smooth Shading");
     combobox_shade_->addItem("Flat Shading");
     connect(combobox_shade_, SIGNAL(activated(int)), openglwindow_, SLOT(SetShadeMode(int)));
+    label_roll_speed_ = new QLabel(tr("Roll Speed"), this);
+    spinbox_roll_speed_ = new QDoubleSpinBox(this);
+    spinbox_roll_speed_->setRange(0.001, 100.);
+    spinbox_roll_speed_->setSingleStep(0.003);
+    spinbox_roll_speed_->setDecimals(3);
+    connect(spinbox_roll_speed_, SIGNAL(valueChanged(double)), openglwindow_, SLOT(SetRollSpeed(double)));
 
 
     groupbox_options_ = new QGroupBox(tr("Options"), this);
@@ -99,6 +110,12 @@ void MainWindow::CreateOptionGroup() {
     options_layout_->addWidget(check_axes_);
     options_layout_->addWidget(check_aabb_);
     options_layout_->addWidget(check_light_);
+    options_layout_->addWidget(check_normalize_);
     options_layout_->addWidget(combobox_projection_);
     options_layout_->addWidget(combobox_shade_);
+
+    groupbox_others_ = new QGroupBox(tr("Others"), this);
+    QVBoxLayout *others_layout_ = new QVBoxLayout(groupbox_others_);
+    others_layout_->addWidget(label_roll_speed_);
+    others_layout_->addWidget(spinbox_roll_speed_);
 }

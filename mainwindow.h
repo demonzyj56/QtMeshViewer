@@ -10,6 +10,7 @@ class QLabel;
 class QGroupBox;
 class QCheckBox;
 class QComboBox;
+class QDoubleSpinBox;
 
 namespace Ui {
 class MainWindow;
@@ -47,8 +48,14 @@ private:
     QCheckBox *check_axes_;
     QCheckBox *check_aabb_;
     QCheckBox *check_light_;
+    QCheckBox *check_normalize_;
     QComboBox *combobox_projection_;
     QComboBox *combobox_shade_;
+
+    // Other options.
+    QGroupBox *groupbox_others_;
+    QLabel *label_roll_speed_;
+    QDoubleSpinBox *spinbox_roll_speed_; // rolling speed for minbotton
 };
 
 #endif // MAINWINDOW_H
