@@ -8,6 +8,11 @@
     throw std::runtime_error("Not implemented!"); \
     }while(0)
 
+template <typename data_type>
+static data_type MIN(data_type a, data_type b) { a<b ? a : b; }
+template <typename data_type>
+static data_type MAX(data_type a, data_type b) { a>b ? a : b; }
+
 // timing utility
 static clock_t tp = clock();
 
