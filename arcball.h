@@ -10,13 +10,18 @@
 class ArcBall {
 public:
     ArcBall(int width, int height)
-        : m_mouse_down(false), m_transform{} {
+        : m_mouse_down(false), m_transform{}, m_center(0.f) {
         this->SetSize(width, height);
     }
 
     void SetSize(int width, int height) {
         m_width = static_cast<float>(width);
         m_height = static_cast<float>(height);
+    }
+
+    void SetCenter(float x, float y) {
+        m_center.x = x;
+        m_center.y = y;
     }
 
     void Reset() {
@@ -27,7 +32,7 @@ public:
 //        glm::vec2 screen_coord = this->ConvertToScreen(px, py);
 //        printf("ArcBall.MouseDown: Screen Coordinate: %.3f, %.3f\n", screen_coord.x, screen_coord.y);
         m_mouse_down = true;
-        m_cur_pos = this->MouseOnSphere(this->ConvertToScreen(px, py), glm::vec2(0.0f), 1.0f);
+        m_cur_pos = this->MouseOnSphere(this->ConvertToScreen(px, py), m_center, 1.0f);
         m_last_pos = m_cur_pos;
         this->UpdateQuat();
     }
@@ -38,7 +43,7 @@ public:
         if (!m_mouse_down)
             return;
         m_last_pos = m_cur_pos;
-        m_cur_pos = this->MouseOnSphere(this->ConvertToScreen(px, py), glm::vec2(0.0f), 1.0f);
+        m_cur_pos = this->MouseOnSphere(this->ConvertToScreen(px, py), m_center, 1.0f);
         this->UpdateQuat();
     }
 
@@ -46,7 +51,7 @@ public:
 //        glm::vec2 screen_coord = this->ConvertToScreen(px, py);
 //        printf("ArcBall.MouseUp: Screen Coordinate: %.3f, %.3f\n", screen_coord.x, screen_coord.y);
         m_last_pos = m_cur_pos;
-        m_cur_pos = this->MouseOnSphere(this->ConvertToScreen(px, py), glm::vec2(0.0f), 1.0f);
+        m_cur_pos = this->MouseOnSphere(this->ConvertToScreen(px, py), m_center, 1.0f);
         this->UpdateQuat();
         m_mouse_down = false;
     }
@@ -80,20 +85,24 @@ private:
         return glm::rotation(from, to);
     }
 
+    // Update transform using quaternion multiplication.
     glm::quat &UpdateQuat() {
-//        m_transform *= GetQuat(m_last_pos, m_cur_pos);
         m_transform = GetQuat(m_last_pos, m_cur_pos) * m_transform;
         return m_transform;
     }
 
+    // Note that for screen of any aspect ratio, the arcball is always
+    // a circle located at the origin and with radius 1.
+    // For w>h (fat), the x-coord is [-w/h,w/h] (left to right), and
+    // the y-coord is [-1,1] (bottom to top).
     glm::vec2 ConvertToScreen(int x, int y) {
         glm::vec2 screen;
         if (m_width >= m_height) {
-            screen.x = (2.f*float(x)/m_width-1.f);// * (m_width/m_height);
+            screen.x = (2.f*float(x)/m_width-1.f) * (m_width/m_height);
             screen.y = -(2.f*float(y)/m_height-1.f);
         } else {
             screen.x = (2.f*float(x)/m_width-1.f);
-            screen.y = -(2.f*float(y)/m_height-1.f);// * (m_height/m_width);
+            screen.y = -(2.f*float(y)/m_height-1.f) * (m_height/m_width);
         }
         return screen;
     }
@@ -105,9 +114,8 @@ private:
     float m_height;
     glm::vec3 m_last_pos;
     glm::vec3 m_cur_pos;
-//    int m_last_pos[2];
-//    int m_cur_pos[2];
     glm::quat m_transform;
+    glm::vec2 m_center;
 
 };
 
