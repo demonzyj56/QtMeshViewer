@@ -1,6 +1,7 @@
 #include "common.h"
 #include "GL/glew.h"
 #include <stdio.h>
+#include <math.h>
 #include "openglwindow.h"
 #include "TriMesh.h"
 #include "MParser.h"
@@ -14,13 +15,32 @@
 #include <QKeyEvent>
 #include <QWheelEvent>
 
+// http://devernay.free.fr/cours/opengl/materials.html
+std::unordered_map<std::string, Material> RegisterMaterials() {
+    auto mat = std::unordered_map<std::string, Material>{};
+    mat["emerald"] = Material(0.0215, 0.1745, 0.0215, 0.07568, 0.61424, 0.07568, 0.633, 0.727811, 0.633, 0.6);
+    mat["jade"] = Material(0.135, 0.2225, 0.1575, 0.54, 0.89, 0.63, 0.316228, 0.316228, 0.316228, 0.1);
+    mat["obsidian"]  = Material(0.05375, 0.05, 0.06625, 0.18275, 0.17, 0.22525, 0.332741, 0.328634, 0.346435, 0.3);
+    mat["pearl"] = Material(0.25, 0.20725, 0.20725, 1, 0.829, 0.829, 0.296648, 0.296648, 0.296648, 0.088);
+    mat["ruby"] = Material(0.1745, 0.01175, 0.01175, 0.61424, 0.04136, 0.04136, 0.727811, 0.626959, 0.626959, 0.6);
+    mat["turquoise"] = Material(0.1,0.18725,0.1745,0.396,0.74151,0.69102,0.297254,0.30829,0.306678,0.1);
+    mat["brass"] = Material(0.329412, 0.223529, 0.027451, 0.780392, 0.568627, 0.113725, 0.992157, 0.941176, 0.807843, 0.21794872);
+    mat["bronze"] = Material(0.2125, 0.1275, 0.054, 0.714, 0.4284, 0.18144, 0.393548, 0.271906, 0.166721, 0.2);
+    mat["chrome"] = Material(0.25, 0.25, 0.25, 0.4, 0.4, 0.4, 0.774597, 0.774597, 0.774597, 0.6);
+    mat["copper"] = Material(0.19125, 0.0735, 0.0225, 0.7038, 0.27048, 0.0828, 0.256777, 0.137622, 0.086014, 0.1);
+    mat["gold"] = Material(0.24725, 0.1995, 0.0745, 0.75164, 0.60648, 0.22648, 0.628281, 0.555802, 0.366065, 0.4);
+    mat["silver"] = Material(0.19225, 0.19225, 0.19225, 0.50754, 0.50754, 0.50754, 0.508273, 0.508273, 0.508273, 0.4);
+    return mat;
+}
+
 OpenGLWindow::OpenGLWindow(QWidget *parent)
     : QGLWidget(parent), m_mesh(nullptr), m_camera(),
       m_draw_axes(true), m_draw_points(true), m_draw_edges(true),
       m_draw_faces(true), m_draw_texture(true), m_arcball(this->width(), this->height()),
       m_draw_bounding_box(false), m_lighting(true),
       m_bounding_box{0.f, 0.f, 0.f, 0.f, 0.f, 0.f}, m_projection(Persp), m_shade(Smooth),
-      m_roll_speed(0.001), m_normalize_size(false)
+      m_roll_speed(0.001), m_normalize_size(false), m_materials(RegisterMaterials()),
+      m_material_name("emerald"), m_light_intensity(1.0)
 {
 }
 
@@ -187,20 +207,28 @@ void OpenGLWindow::Render() {
 }
 
 void OpenGLWindow::SetLight() {
-    static GLfloat mat_specular[] = {1.0, 1.0, 1.0, 1.0};
-    static GLfloat mat_shininess[] = {50.0};
-    static GLfloat light_position[] = {0.0, 0.0, 0.0, 1.0};
-    static GLfloat white_light[] = {0.8, 0.8, 0.8, 1.0};
-    static GLfloat lmodel_ambient[] = {1.0, 1.0, 1.0, 1.0};
-
-    glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
-    glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+    static std::string mat_name;
+    static Material material;
+    static GLfloat light_position[] = {0.0, 5.0, 0.0, 1.0};
+    static GLfloat white_light[] = {1.0, 1.0, 1.0, 1.0};
+    if (mat_name != m_material_name) {
+        auto it = m_materials.find(m_material_name);
+        assert(it != m_materials.end());
+        mat_name = it->first;
+        material = it->second;
+    }
+    white_light[0] = white_light[1] = white_light[2] = m_light_intensity;
+    glMaterialfv(GL_FRONT, GL_AMBIENT, material.Ambient);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, material.Diffuse);
+    glMaterialfv(GL_FRONT, GL_SPECULAR, material.Specular);
+    glMaterialf(GL_FRONT, GL_SHININESS, material.Shininess*128.);
     glLightfv(GL_LIGHT0, GL_POSITION, light_position);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, white_light);
     glLightfv(GL_LIGHT0, GL_SPECULAR, white_light);
-    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
-    glEnable(GL_LIGHTING);
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, material.ModelAmbient);
     glEnable(GL_LIGHT0);
+    glEnable(GL_NORMALIZE);     // This is important!
+    glEnable(GL_LIGHTING);
 }
 
 void OpenGLWindow::DrawAxes(bool bv) {
@@ -209,12 +237,21 @@ void OpenGLWindow::DrawAxes(bool bv) {
             glDisable(GL_LIGHTING);
             glDisable(GL_LIGHT0);
         }
+        glLineWidth(3.);
+        static Cone cx(0.4, 0.1, 18);
+        static Cone cy(0.4, 0.1, 18);
+        static Cone cz(0.4, 0.1, 18);
         // x-axis
         glColor3f(1.0f, 0.0f, 0.0f);
         glBegin(GL_LINES);
         glVertex3f(0.0f, 0.0f, 0.0f);
         glVertex3f(4.7f, 0.0f, 0.0f);
         glEnd();
+        glPushMatrix(); // cone-x
+        glTranslatef(4.7, 0.0, 0.0);
+        glRotatef(90.0, 0.0, 1.0, 0.0);
+        cx.Draw();
+        glPopMatrix();
 
         // y-axis
         glColor3f(0.0f, 1.0f, 0.0f);
@@ -222,6 +259,12 @@ void OpenGLWindow::DrawAxes(bool bv) {
         glVertex3f(0.0f, 0.0f, 0.0f);
         glVertex3f(0.0f, 4.7f, 0.0f);
         glEnd();
+        glPushMatrix(); // cone-y
+        glTranslatef(0.0, 4.7, 0.0);
+        glRotatef(-90.0, 1.0, 0.0, 0.0);
+        cy.Draw();
+        glPopMatrix();
+
 
         // z-axis
         glColor3f(0.0f, 0.0f, 1.0f);
@@ -229,6 +272,11 @@ void OpenGLWindow::DrawAxes(bool bv) {
         glVertex3f(0.0f, 0.0f, 0.0f);
         glVertex3f(0.0f, 0.0f, 4.7f);
         glEnd();
+        glPushMatrix(); // cone-z
+        glTranslatef(0.0, 0.0, 4.7);
+        cz.Draw();
+        glPopMatrix();
+        glLineWidth(1.);
 
         // ground
         glColor3f(0.8f, 0.8f, 0.8f);
@@ -305,6 +353,7 @@ void OpenGLWindow::DrawFaces(bool bv) {
 void OpenGLWindow::DrawBoundingBox(bool bv) {
     if (bv && m_mesh) {
         glColor3f(1.0f, 1.0f, 1.0f);
+        glLineWidth(3.);
         glBegin(GL_LINES);
         // zmin->zmax
         glVertex3f(m_bounding_box.xmin, m_bounding_box.ymin, m_bounding_box.zmin);
@@ -346,6 +395,7 @@ void OpenGLWindow::DrawBoundingBox(bool bv) {
         glVertex3f(m_bounding_box.xmax, m_bounding_box.ymax, m_bounding_box.zmax);
 
         glEnd();
+        glLineWidth(1.);
     }
 }
 
@@ -365,13 +415,20 @@ void OpenGLWindow::NormalizeSize(bool bv) {
 }
 
 void OpenGLWindow::Project() {
+    static float pi = acos(-1.);
+    static float fov = 45.0;
+    static float len = tan(fov/2./180.*pi)*sqrt(3.); // Heuristics since init location is (1,1,1).
+    float ar = float(this->width()) / float(this->height()); // aspect ratio
     if (m_projection == Ortho) {
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
-        glOrtho(-1., 1., -1., 1., 0.001, 1000.);
+        // Adjust viewing window to zoom in/out.
+        glOrtho(-m_camera.distance*len*ar, m_camera.distance*len*ar,
+                -m_camera.distance*len, m_camera.distance*len,
+                0.01, 100.);
     } else {
-        glm::mat4 Projection = glm::perspective(glm::radians(45.0f),
-            GLfloat(this->width())/GLfloat(this->height()), 0.001f, 1000.0f);
+        glm::mat4 Projection = glm::perspective(glm::radians(fov),
+            GLfloat(ar), 0.01f, 100.0f);
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
         glLoadMatrixf(glm::value_ptr(Projection));
@@ -386,6 +443,9 @@ void OpenGLWindow::Shade() {
 
 void OpenGLWindow::ComputeBoundingBox() {
     if (!m_mesh) return;
+    m_bounding_box.xmin = m_bounding_box.xmax =
+    m_bounding_box.ymin = m_bounding_box.ymax =
+    m_bounding_box.zmin = m_bounding_box.zmax = 0.;
     for (auto vit = m_mesh->GetVerticesBegin(); vit != m_mesh->GetVerticesEnd(); ++vit) {
         if ((*vit)->x > m_bounding_box.xmax)
             m_bounding_box.xmax = (*vit)->x;
