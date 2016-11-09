@@ -56,6 +56,10 @@ private:
     QGroupBox *groupbox_others_;
     QLabel *label_roll_speed_;
     QDoubleSpinBox *spinbox_roll_speed_; // rolling speed for minbotton
+    QLabel *label_material_;
+    QComboBox *combobox_material_;
+    QLabel *label_light_intensity_;
+    QDoubleSpinBox *spinbox_light_intensity_;
 };
 
 #endif // MAINWINDOW_H

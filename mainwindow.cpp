@@ -10,6 +10,7 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDoubleSpinBox>
+#include <QStringList>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -100,7 +101,19 @@ void MainWindow::CreateOptionGroup() {
     spinbox_roll_speed_->setSingleStep(0.003);
     spinbox_roll_speed_->setDecimals(3);
     connect(spinbox_roll_speed_, SIGNAL(valueChanged(double)), openglwindow_, SLOT(SetRollSpeed(double)));
-
+    static QStringList mats_name;
+    mats_name << "emerald" << "jade" << "obsidian" << "pearl" << "ruby" << "turquoise" << "brass"
+              << "bronze" << "chrome" << "copper" << "gold" << "silver";
+    label_material_ = new QLabel(tr("Materials"), this);
+    combobox_material_ = new QComboBox(this);
+    combobox_material_->addItems(mats_name);
+    connect(combobox_material_, SIGNAL(activated(QString)), openglwindow_, SLOT(SetMaterial(QString)));
+    label_light_intensity_ = new QLabel(tr("Light Intensity"), this);
+    spinbox_light_intensity_ = new QDoubleSpinBox(this);
+    spinbox_light_intensity_->setRange(0., 1.);
+    spinbox_light_intensity_->setSingleStep(0.05);
+    spinbox_light_intensity_->setValue(1.0);
+    connect(spinbox_light_intensity_, SIGNAL(valueChanged(double)), openglwindow_, SLOT(SetLightIntensity(double)));
 
     groupbox_options_ = new QGroupBox(tr("Options"), this);
     QVBoxLayout *options_layout_ = new QVBoxLayout(groupbox_options_);
@@ -118,4 +131,8 @@ void MainWindow::CreateOptionGroup() {
     QVBoxLayout *others_layout_ = new QVBoxLayout(groupbox_others_);
     others_layout_->addWidget(label_roll_speed_);
     others_layout_->addWidget(spinbox_roll_speed_);
+    others_layout_->addWidget(label_light_intensity_);
+    others_layout_->addWidget(spinbox_light_intensity_);
+    others_layout_->addWidget(label_material_);
+    others_layout_->addWidget(combobox_material_);
 }
